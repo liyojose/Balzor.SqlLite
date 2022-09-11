@@ -13,7 +13,7 @@ namespace DemoApp.Client.Data
     // To support offline use, we use this simple local data repository
     // instead of performing data access directly against the server.
     // This would not be needed if we assumed that network access was always
-    // available.
+    // available. Updated to GIT
 
     public class LocalUserStore
     {
