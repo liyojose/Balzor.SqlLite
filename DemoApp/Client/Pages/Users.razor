@@ -1,0 +1,96 @@
+﻿@using DemoApp.Shared
+@using DemoApp.Client.Data
+@page "/userspage"
+@inject LocalUserStore LocalUserStore
+@inject HttpClient Http
+<div class="container">
+    <div class="row bg-light">
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Id</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Delete User</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (users.Any())
+                {
+                    @foreach (var User in users)
+                    {
+                        <tr @onclick="(() => SetUserForUpdate(User))">
+                            <td>@User.Id</td>
+                            <td>@User.Firstname</td>
+                            <td>@User.Lastname</td>
+                            <td>@User.Email</td>
+                            <td><button class="btn btn-danger" @onclick="(() => DeleteUser(User))">Delete</button></td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="6"><strong>No Users available</strong></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="row m-5">
+        <div class="col-5 bg-light m-2 justify-content-start">
+            <div class="p-3 mb-3 bg-primary text-white text-center">Add New User</div>
+            <EditForm Model="@NewUser">
+                <div class="form-group">
+                    <label for="name">First Name</label>
+                    <input type="text" id="Firstname" class="form-control" @bind-value="@NewUser.Firstname" />
+                </div>
+                <div class="form-group">
+                    <label for="price">Last Name</label>
+                    <input type="text" id="Lastname" class="form-control" @bind="@NewUser.Lastname" />
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Email</label>
+                    <input type="email" id="Email" class="form-control" @bind="@NewUser.Email" />
+                </div>
+                <div class="text-center p-3 mb-3">
+                    <button class="btn btn-info" @onclick="AddNewUser"> Add User</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    IEnumerable<User>? users = new List<User>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            //users = await Http.GetFromJsonAsync<List<User>>("UsersData");
+            users = await LocalUserStore.GetUsers();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+       
+    }
+
+    public User NewUser { get; set; } = new User();
+    private async Task AddNewUser()
+    {
+        await LocalUserStore.SaveUserAsync(NewUser);
+        users = await LocalUserStore.GetUsers();
+    }
+    User UpdateUser = new User();
+    private void SetUserForUpdate(User User)
+    {
+        UpdateUser = User;
+    }
+    private async Task DeleteUser(User User)
+    {
+        await Http.DeleteAsync("Users/"+User.Id);
+    }
+}
