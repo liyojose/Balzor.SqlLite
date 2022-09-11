@@ -1,4 +1,5 @@
-﻿@using DemoApp.Shared
+﻿@using BlazorStrap
+@using DemoApp.Shared
 @using DemoApp.Client.Data
 @page "/userspage"
 @inject LocalUserStore LocalUserStore
@@ -36,7 +37,7 @@
             </tbody>
         </table>
     </div>
-    <div class="row m-5">
+   @* <div class="row m-5">
         <div class="col-5 bg-light m-2 justify-content-start">
             <div class="p-3 mb-3 bg-primary text-white text-center">Add New User</div>
             <EditForm Model="@NewUser">
@@ -57,10 +58,73 @@
                 </div>
             </EditForm>
         </div>
-    </div>
+    </div>*@
+    <BSDataTable FetchItems="FetchItems" PaginationBottom="true" StartPage="_startPage" RowsPerPage="20" Context="item">
+    <Header>
+        <BSDataTableHead TValue="Employee" Sortable="true" Column="@(nameof(Employee.Id))">Id</BSDataTableHead>
+        <BSDataTableHead TValue="Employee" Sortable="true" Column="@(nameof(Employee.Name))" ColumnFilter="true">Name</BSDataTableHead>
+        <BSDataTableHead TValue="Employee" Sortable="true" Column="@(nameof(Employee.Email))" ColumnFilter="true">Email</BSDataTableHead>
+    </Header>
+    <Body>
+    <BSDataTableRow Color="item.RowColor">
+        <BSTD>
+            @item.Id
+        </BSTD>
+        <BSTD>
+            @item.Name
+        </BSTD>
+        <BSTD>
+            @item.Email
+        </BSTD>
+    </BSDataTableRow>
+    </Body>
+</BSDataTable>
 </div>
 
 @code {
+
+    // BSTable Parameters
+    private BSColor OTableColor { get; set; } = BSColor.Default; // Not Set
+    private bool OIsBordered { get; set; } 
+    private bool OIsBorderLess { get; set; }
+    private bool OIsCaptionTop { get; set; }
+    private bool OIsStriped { get; set; }
+    
+    // BSTR Parameters
+    private AlignRow OTRAlignRow { get; set; }
+    private BSColor OTRColor { get; set; } = BSColor.Default; // Not Set
+    private bool OTRIsActive { get; set; }
+    // BSTD Parameters
+    private AlignRow OAlignRow { get; set; }
+    private BSColor OTDColor { get; set; } = BSColor.Default; // Not Set
+    private bool OIsActive { get; set; }
+
+
+
+    private readonly int _startPage = 2;
+    private readonly Table2Model _model = new Table2Model();
+
+    private async Task<(IEnumerable<Employee>, int)> FetchItems(DataRequest dataRequest)
+    {
+        var count = _model.DataSet.Count();
+        if (dataRequest.FilterColumnProperty != null && dataRequest.Filter != null)
+        {
+            var data = _model.DataSet.Where(q =>
+                (q.Name.ToLower().Contains(dataRequest.Filter) && nameof(q.Name) == dataRequest.FilterColumn) ||
+                (q.Email.ToLower().Contains(dataRequest.Filter) && nameof(q.Email) == dataRequest.FilterColumn)
+                ).ToList();
+            count = data.Count();
+            return (data, count);
+        }
+        if (dataRequest.SortColumnProperty != null)
+        {
+            if (dataRequest.Descending)
+                return (await _model.DataSet.OrderByDescending(x => dataRequest.SortColumnProperty.GetValue(x)).Skip(dataRequest.Page * 20).Take(20).ToListAsync(), count);
+            return (await _model.DataSet.OrderBy(x => dataRequest.SortColumnProperty.GetValue(x)).Skip(dataRequest.Page * 20).Take(20).ToListAsync(), count);
+        }
+        return (await _model.DataSet.Skip(dataRequest.Page * 20).Take(20).ToListAsync(),count);
+    }
+
     IEnumerable<User>? users = new List<User>();
 
     protected override async Task OnInitializedAsync()

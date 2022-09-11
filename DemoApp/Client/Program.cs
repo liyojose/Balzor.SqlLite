@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using System.Net.Http;
 using Microsoft.Extensions.Http;
 using Microsoft.AspNetCore.Components.WebAssembly.Http;
+using BlazorStrap;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -19,4 +20,5 @@ builder.Services.AddHttpClient("Default", client => client.BaseAddress = new Uri
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<LocalUserStore>();
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Default"));
+builder.Services.AddBlazorStrap();
 await builder.Build().RunAsync();
