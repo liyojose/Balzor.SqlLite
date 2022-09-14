@@ -52,11 +52,11 @@ namespace DemoApp.Client.Data
             ?? await GetAsync<User>("serverdata", id);
 
         // If there's an outstanding local edit, use that. If not, use the server data.
-        public async Task<IEnumerable<User>> GetUsers()
+        public async Task<IEnumerable<Localuser>> GetUsers()
         {
-            var localedited = await GetAllAsync<IEnumerable<User>>("localedits");
-            var serverdata = await GetAllAsync<IEnumerable<User>>("serverdata");
-            return localedited.Any()? localedited: serverdata;
+            var localedited = await GetAllAsync<IEnumerable<Localuser>>("localedits");
+            var serverdata = await GetAllAsync<IEnumerable<Localuser>>("serverdata");
+            return localedited.Union(serverdata).Where(e=> e.IsDeleted == false);
         }
 
         public async ValueTask<DateTime?> GetLastUpdateDateAsync()
@@ -65,12 +65,14 @@ namespace DemoApp.Client.Data
             return value == null ? (DateTime?)null : DateTime.Parse(value);
         }
 
-        public ValueTask SaveUserAsync(User User)
-            => PutAsync("localedits", null, User);
-
+        public ValueTask SaveUserAsync(Localuser User)
+        {
+            User.LastUpdated = DateTime.Now;
+            return PutAsync("localedits", null, User);
+        }
         async Task FetchChangesAsync()
         {
-            var mostRecentlyUpdated = await js.InvokeAsync<User>("localUserStore.getFirstFromIndex", "serverdata", "lastUpdated", "prev");
+            var mostRecentlyUpdated = await js.InvokeAsync<Localuser>("localUserStore.getFirstFromIndex", "serverdata", "lastUpdated", "prev");
             var since = mostRecentlyUpdated?.LastUpdated ?? DateTime.MinValue;
             var json = await httpClient.GetStringAsync($"api/UsersData/ChangedUsers?since={since:o}");
             await js.InvokeVoidAsync("localUserStore.putAllFromJson", "serverdata", json);

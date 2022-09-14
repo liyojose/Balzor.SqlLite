@@ -20,4 +20,10 @@ namespace DemoApp.Shared
         [Required]
         public DateTime LastUpdated { get; set; }
     }
+
+    public class Localuser : User
+    {
+        public bool Updated { get; set; }
+        public bool IsDeleted { get; set; }
+    }
 }

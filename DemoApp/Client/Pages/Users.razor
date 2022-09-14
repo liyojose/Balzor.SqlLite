@@ -4,7 +4,17 @@
 @page "/userspage"
 @inject LocalUserStore LocalUserStore
 @inject HttpClient Http
+@inject IBlazorStrap blazorStrap
 <div class="container">
+    <BSNavbar Color="BSColor.Light">
+        <BSContainer Container="Container.Fluid">
+            <SyncStatus />
+            <form class="d-flex">
+                <BSButton Color="BSColor.Primary" Target="modal1">Add User</BSButton>
+                <BSButton Color="BSColor.Success" IsOutlined="true">Sync</BSButton>
+            </form>
+        </BSContainer>
+    </BSNavbar>
     <div class="row bg-light">
         <table class="table table-bordered">
             <thead class="thead-dark">
@@ -37,95 +47,34 @@
             </tbody>
         </table>
     </div>
-   @* <div class="row m-5">
-        <div class="col-5 bg-light m-2 justify-content-start">
-            <div class="p-3 mb-3 bg-primary text-white text-center">Add New User</div>
-            <EditForm Model="@NewUser">
-                <div class="form-group">
-                    <label for="name">First Name</label>
-                    <input type="text" id="Firstname" class="form-control" @bind-value="@NewUser.Firstname" />
+    <BSModal DataId="modal1" OnShow="@(() => AddNewUser(new Localuser()))">
+        <BSForm Model="model" OnValidSubmit="@Update">
+            <BSModalHeader>New User Form</BSModalHeader>
+            <BSModalContent>
+                <div class="mb-3">
+                    <BSLabel>Name</BSLabel>
+                    <BSInput InputType="InputType.Text" @bind-Value="model.Firstname" />
                 </div>
-                <div class="form-group">
-                    <label for="price">Last Name</label>
-                    <input type="text" id="Lastname" class="form-control" @bind="@NewUser.Lastname" />
+                <div class="mb-3">
+                    <BSLabel>Last Name</BSLabel>
+                    <BSInput InputType="InputType.Text" @bind-Value="model.Lastname" />
                 </div>
-                <div class="form-group">
-                    <label for="quantity">Email</label>
-                    <input type="email" id="Email" class="form-control" @bind="@NewUser.Email" />
+                <div class="mb-3">
+                    <BSLabel>Email address</BSLabel>
+                    <BSInput InputType="InputType.Email" placeholder="name@example.com" @bind-Value="model.Email" />
                 </div>
-                <div class="text-center p-3 mb-3">
-                    <button class="btn btn-info" @onclick="AddNewUser"> Add User</button>
-                </div>
-            </EditForm>
-        </div>
-    </div>*@
-    <BSDataTable FetchItems="FetchItems" PaginationBottom="true" StartPage="_startPage" RowsPerPage="20" Context="item">
-    <Header>
-        <BSDataTableHead TValue="Employee" Sortable="true" Column="@(nameof(Employee.Id))">Id</BSDataTableHead>
-        <BSDataTableHead TValue="Employee" Sortable="true" Column="@(nameof(Employee.Name))" ColumnFilter="true">Name</BSDataTableHead>
-        <BSDataTableHead TValue="Employee" Sortable="true" Column="@(nameof(Employee.Email))" ColumnFilter="true">Email</BSDataTableHead>
-    </Header>
-    <Body>
-    <BSDataTableRow Color="item.RowColor">
-        <BSTD>
-            @item.Id
-        </BSTD>
-        <BSTD>
-            @item.Name
-        </BSTD>
-        <BSTD>
-            @item.Email
-        </BSTD>
-    </BSDataTableRow>
-    </Body>
-</BSDataTable>
+            </BSModalContent>
+            <BSModalFooter>
+                <BSButton Target="model9">Cancel</BSButton>
+                <BSButton IsSubmit="true" Color="BSColor.Primary">Save</BSButton>
+            </BSModalFooter>
+        </BSForm>
+    </BSModal>
 </div>
 
 @code {
 
-    // BSTable Parameters
-    private BSColor OTableColor { get; set; } = BSColor.Default; // Not Set
-    private bool OIsBordered { get; set; } 
-    private bool OIsBorderLess { get; set; }
-    private bool OIsCaptionTop { get; set; }
-    private bool OIsStriped { get; set; }
-    
-    // BSTR Parameters
-    private AlignRow OTRAlignRow { get; set; }
-    private BSColor OTRColor { get; set; } = BSColor.Default; // Not Set
-    private bool OTRIsActive { get; set; }
-    // BSTD Parameters
-    private AlignRow OAlignRow { get; set; }
-    private BSColor OTDColor { get; set; } = BSColor.Default; // Not Set
-    private bool OIsActive { get; set; }
-
-
-
-    private readonly int _startPage = 2;
-    private readonly Table2Model _model = new Table2Model();
-
-    private async Task<(IEnumerable<Employee>, int)> FetchItems(DataRequest dataRequest)
-    {
-        var count = _model.DataSet.Count();
-        if (dataRequest.FilterColumnProperty != null && dataRequest.Filter != null)
-        {
-            var data = _model.DataSet.Where(q =>
-                (q.Name.ToLower().Contains(dataRequest.Filter) && nameof(q.Name) == dataRequest.FilterColumn) ||
-                (q.Email.ToLower().Contains(dataRequest.Filter) && nameof(q.Email) == dataRequest.FilterColumn)
-                ).ToList();
-            count = data.Count();
-            return (data, count);
-        }
-        if (dataRequest.SortColumnProperty != null)
-        {
-            if (dataRequest.Descending)
-                return (await _model.DataSet.OrderByDescending(x => dataRequest.SortColumnProperty.GetValue(x)).Skip(dataRequest.Page * 20).Take(20).ToListAsync(), count);
-            return (await _model.DataSet.OrderBy(x => dataRequest.SortColumnProperty.GetValue(x)).Skip(dataRequest.Page * 20).Take(20).ToListAsync(), count);
-        }
-        return (await _model.DataSet.Skip(dataRequest.Page * 20).Take(20).ToListAsync(),count);
-    }
-
-    IEnumerable<User>? users = new List<User>();
+    IEnumerable<Localuser>? users = new List<Localuser>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,11 +90,25 @@
         }
        
     }
+    BSModal refModal;
+    private Localuser model = new Localuser();
 
     public User NewUser { get; set; } = new User();
+    private async Task AddNewUser(Localuser u)
+    {
+        model = u;
+    }
+    private async Task Update()
+    {
+        blazorStrap.ForwardClick("modal1");
+        await LocalUserStore.SaveUserAsync(model);
+        users = await LocalUserStore.GetUsers();
+    }
+
+
     private async Task AddNewUser()
     {
-        await LocalUserStore.SaveUserAsync(NewUser);
+        await LocalUserStore.SaveUserAsync(model);
         users = await LocalUserStore.GetUsers();
     }
     User UpdateUser = new User();

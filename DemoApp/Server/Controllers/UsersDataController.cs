@@ -20,14 +20,29 @@ namespace DemoApp.Server.Controllers
             _db = db;
         }
         [HttpGet]
-        public async Task<List<User>> Get()
+        public async Task<List<Localuser>> Get()
         {
-            return await _db.Users.ToListAsync();
+            var dbuser =  await _db.Users.ToListAsync();
+            var localuser = dbuser.Select(e => new Localuser
+            {
+                Id = e.Id,
+                Firstname = e.Firstname,
+                Lastname = e.Lastname,
+                Email = e.Email,
+                LastUpdated = e.LastUpdated,
+                IsDeleted = false,
+                Updated = false
+            }).ToList();
+            return localuser;
         }
         [HttpPost]
-        public async Task<OkResult> Post(User user)
+        public async Task<OkResult> Post(Localuser user)
         {
-            user.LastUpdated = DateTime.Now;
+            var dbuser = new User();
+            dbuser.Firstname = user.Firstname;
+            dbuser.Lastname = user.Lastname;
+            dbuser.Email = user.Email;
+            dbuser.LastUpdated = DateTime.Now;
             await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
             return Ok();
@@ -35,7 +50,18 @@ namespace DemoApp.Server.Controllers
         [HttpGet]
         public async Task<IEnumerable<User>> ChangedUsers([FromQuery] DateTime since)
         {
-            return _db.Users.Where(v => v.LastUpdated >= since);
+            var dbuser = _db.Users.Where(v => v.LastUpdated >= since);
+            var localuser = dbuser.Select(e => new Localuser
+            {
+                Id = e.Id,
+                Firstname = e.Firstname,
+                Lastname = e.Lastname,
+                Email = e.Email,
+                LastUpdated = e.LastUpdated,
+                IsDeleted = false,
+                Updated = false
+            }).ToList();
+            return localuser;
         }
 
         [HttpPut]
