@@ -70,6 +70,12 @@ namespace DemoApp.Client.Data
             User.LastUpdated = DateTime.Now;
             return PutAsync("localedits", null, User);
         }
+        public ValueTask RemoveUserAsync(Localuser User)
+        {
+            User.LastUpdated = DateTime.Now;
+            User.IsDeleted = true;
+            return PutAsync("localedits", User.Id>0?User.Id : Guid.NewGuid(),User);
+        }
         async Task FetchChangesAsync()
         {
             var mostRecentlyUpdated = await js.InvokeAsync<Localuser>("localUserStore.getFirstFromIndex", "serverdata", "lastUpdated", "prev");

@@ -88,7 +88,7 @@
             Console.WriteLine(e);
             throw;
         }
-       
+
     }
     BSModal refModal;
     private Localuser model = new Localuser();
@@ -116,8 +116,19 @@
     {
         UpdateUser = User;
     }
-    private async Task DeleteUser(User User)
+    private async Task DeleteUser(Localuser User)
     {
-        await Http.DeleteAsync("Users/"+User.Id);
+        try
+        {
+            await LocalUserStore.RemoveUserAsync(model);
+            users = await LocalUserStore.GetUsers();
+            //await Http.DeleteAsync("Users/"+User.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.Write(ex.Message);
+
+        }
+
     }
 }
